@@ -60,6 +60,11 @@ public class TrainCommands {
                             .executes(TrainCommands::updateWriterState)
                         )
                     )
+                    .then(Commands.literal("broadcastUpdates")
+                        .then(Commands.argument("truefalse", BoolArgumentType.bool())
+                            .executes(TrainCommands::updateBroadcastState)
+                        )
+                    )
                 )
             )
         );
@@ -189,12 +194,28 @@ public class TrainCommands {
 
     private static int updateWriterState(CommandContext<CommandSource> cmd) {
         String trainID = StringArgumentType.getString(cmd, "trainID");
-        Boolean on = BoolArgumentType.getBool(cmd, "truefalse");
+        boolean on = BoolArgumentType.getBool(cmd, "truefalse");
 
         if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
             Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
             t.setWriter(on);
             cmd.getSource().sendSuccess(new StringTextComponent("Train "+ t.getTrainID() + (on ? " recording data to csv." : " stopped data recording.")), true);
+            return 1;
+        }
+        else{
+            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
+        }
+        return 0;
+    }
+
+    private static int updateBroadcastState(CommandContext<CommandSource> cmd) {
+        String trainID = StringArgumentType.getString(cmd, "trainID");
+        boolean on = BoolArgumentType.getBool(cmd, "truefalse");
+
+        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
+            Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
+            t.setBroadcast(on);
+            cmd.getSource().sendSuccess(new StringTextComponent("Train "+ t.getTrainID() + (on ? " broadcasting status updates." : " stopped broadcasting updates.")), true);
             return 1;
         }
         else{

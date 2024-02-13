@@ -43,6 +43,7 @@ public class Train{
 
     private PrintWriter writer;
     private boolean writingData = false;
+    private boolean broadcasting = false;
 
     public Train(UUID leadLocoUUID, String trainID, String routeName, int nextStop){
         this.trainID = trainID;
@@ -80,6 +81,10 @@ public class Train{
             writer.close();
             ModEvents.removeWriter(writer);
         }
+    }
+
+    public void setBroadcast(boolean on){
+        broadcasting = on;
     }
 
     public Locomotive getLeadLoco(){
@@ -137,7 +142,9 @@ public class Train{
                     if(targetNum == getRoute().getTargets().size()){
                         targetNum = 0;
                     }
-                    Chat.broadcastMessage("Train departing. Next target: " + getRoute().getTargets().get(targetNum).getTargetName());
+                    if(broadcasting) {
+                        Chat.broadcastMessage("Train departing. Next target: " + getRoute().getTargets().get(targetNum).getTargetName());
+                    }
                 }
                 else{
                     waitTicks--;
@@ -172,19 +179,25 @@ public class Train{
                 if(targetDistance < triggerDistance+4 && targetDistance > triggerDistance-4 && !stopping && !slowing){
                     if(currentTarget.getTargetType() == Target.TargetType.STATION_STOP){
                         stopping = true;
-                        Chat.broadcastMessage("Arriving at " + currentTarget.getTargetName() + ". Train stopping.");
+                        if(broadcasting) {
+                            Chat.broadcastMessage("Arriving at " + currentTarget.getTargetName() + ". Train stopping.");
+                        }
                     }
                     else if(currentTarget.getTargetType() == Target.TargetType.SPEED_CHANGE){
                         if(speedToReach < currentMaxSpeed){
                             slowing = true;
-                            Chat.broadcastMessage("Slowing for speed limit of " + currentTarget.getTargetSpeed() + "mph.");
+                            if(broadcasting) {
+                                Chat.broadcastMessage("Slowing for speed limit of " + currentTarget.getTargetSpeed() + "mph.");
+                            }
                         }
                         else{
                             targetNum += 1;
                             if(targetNum == getRoute().getTargets().size()){
                                 targetNum = 0;
                             }
-                            Chat.broadcastMessage("Speed limit changed to " + currentTarget.getTargetSpeed() + "mph. Next target: " + getRoute().getTargets().get(targetNum).getTargetName());
+                            if(broadcasting) {
+                                Chat.broadcastMessage("Speed limit changed to " + currentTarget.getTargetSpeed() + "mph. Next target: " + getRoute().getTargets().get(targetNum).getTargetName());
+                            }
                         }
                         currentMaxSpeed = speedToReach;
                     }
@@ -225,7 +238,9 @@ public class Train{
                         action = "stopping_stopped";
                         waitingAtStation = true;
                         waitTicks = 600;
-                        Chat.broadcastMessage("This stop is: " + currentTarget.getTargetName() + ". Waiting 30 seconds...");
+                        if(broadcasting) {
+                            Chat.broadcastMessage("This stop is: " + currentTarget.getTargetName() + ". Waiting 30 seconds...");
+                        }
                     }
                 }
                 // REACHING/MAINTAINING SPEED
@@ -242,7 +257,9 @@ public class Train{
                             if(targetNum == getRoute().getTargets().size()){
                                 targetNum = 0;
                             }
-                            Chat.broadcastMessage("Speed limit reached. Next target: " + getRoute().getTargets().get(targetNum).getTargetName());
+                            if(broadcasting) {
+                                Chat.broadcastMessage("Speed limit reached. Next target: " + getRoute().getTargets().get(targetNum).getTargetName());
+                            }
                         }
                         currentBrake = 0.0;
                         currentLocoBrake = 0.0;
