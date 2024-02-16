@@ -27,6 +27,9 @@ public class RouteCommands {
                     )
                 )
                 .then(Commands.argument("routeName", StringArgumentType.word())
+                    .then(Commands.literal("targets")
+                        .executes(RouteCommands::listRouteTargets)
+                    )
                     .then(Commands.literal("addStop")
                         .then(Commands.argument("stationName", StringArgumentType.word())
                             .executes(RouteCommands::createRouteStop)
@@ -94,6 +97,22 @@ public class RouteCommands {
                 LinkedList<Target> targets = r.getTargets(TargetType.STATION_STOP);
                 src.sendSuccess(new StringTextComponent("Name: " + r.getRouteName() + ", first stop: " + targets.getFirst().getTargetName() + ", last stop: " + targets.getLast().getTargetName()), true);
             }
+        }
+        return 1;
+    }
+
+    private static int listRouteTargets(CommandContext<CommandSource> cmd){
+        String routeName = StringArgumentType.getString(cmd, "routeName");
+
+        if(TrainManagerSaveData.getRoutes(cmd.getSource().getLevel()).containsKey(routeName)){
+            Route r = TrainManagerSaveData.getRoute(cmd.getSource().getLevel(), routeName);
+            int i = 0;
+            for(Target tgt : r.getTargets()){
+                cmd.getSource().sendSuccess(new StringTextComponent("Target " + (i++) + ": (x " + tgt.getTargetX() + ", z " + tgt.getTargetZ() + ") " + tgt.getTargetType().name() + " " + (tgt.getTargetType() == TargetType.SPEED_CHANGE ? tgt.getTargetSpeed() : tgt.getTargetName())), true);
+            }
+        }
+        else{
+            cmd.getSource().sendFailure(new StringTextComponent("Error: route '" + routeName + "' does not exist."));
         }
         return 1;
     }
