@@ -154,7 +154,7 @@ public class Train{
                 }
 
                 // Check for trigger condition
-                if(targetDistance < triggerDistance+4 && targetDistance > triggerDistance-4 && !stopping && !slowing){
+                if(targetDistance < triggerDistance+2 && targetDistance > triggerDistance-2 && !stopping && !slowing){
                     if(currentTarget.getTargetType() == Target.TargetType.STATION_STOP){
                         stopping = true;
                         if(broadcasting) {
