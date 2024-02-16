@@ -6,6 +6,7 @@ import com.lucaslower.trainmanager.Events.ModEvents;
 import com.lucaslower.trainmanager.Util.Chat;
 import com.lucaslower.trainmanager.Util.TrainManagerSaveData;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import cam72cam.immersiverailroading.entity.Locomotive;
 
@@ -40,9 +41,6 @@ public class Train{
 
     private boolean waitingAtStation = false;
     private int waitTicks = 600;
-
-    private PrintWriter writer;
-    private boolean writingData = false;
     private boolean broadcasting = false;
 
     public Train(UUID leadLocoUUID, String trainID, String routeName, int nextStop){
@@ -64,23 +62,6 @@ public class Train{
         nbt.putString("routeName", routeName);
         nbt.putInt("nextStop", targetNum);
         return nbt;
-    }
-
-    public void setWriter(boolean on){
-        writingData = on;
-        if(on){
-            try{
-                writer = new PrintWriter("C:\\Users\\Lucas\\Desktop\\acc_profile_"+trainID, "UTF-8");
-                ModEvents.addWriter(writer);
-            }
-            catch(FileNotFoundException | UnsupportedEncodingException e){
-
-            }
-        }
-        else{
-            writer.close();
-            ModEvents.removeWriter(writer);
-        }
     }
 
     public void setBroadcast(boolean on){
@@ -152,9 +133,6 @@ public class Train{
             }
             else{
 
-                // for data logging
-                String action = "";
-
                 // Get location for next action (stopping at station, throwing switch, changing speed, etc)
                 Target currentTarget = getRoute().getTargets().get(targetNum);
                 double targetX = currentTarget.getTargetX();
@@ -213,29 +191,16 @@ public class Train{
                     // SLOWING
                     if(currentSpeed > 0.0){
                         // SLOWING TOO SLOW
-                        if(triggerDistance > targetDistance){
-                            if(currentBrake < 1.0){
-                                currentBrake += 0.05;
-                                action = "stopping_reduce_acc_brake_increase";
-                            }
-                            else{
-                                action = "stopping_reduce_acc_brake_1";
-                            }
+                        if(triggerDistance > targetDistance && currentBrake < 1.0){
+                            currentBrake += 0.05;
                         }
                         // SLOWING TOO FAST
-                        else if(triggerDistance < targetDistance){
-                            if(currentBrake > 0.0){
-                                currentBrake -= 0.01;
-                                action = "stopping_reach_acc_brake_decrease";
-                            }
-                            else{
-                                action = "stopping_reach_acc_brake_0";
-                            }
+                        else if(triggerDistance < targetDistance && currentBrake > 0.0){
+                            currentBrake -= 0.01;
                         }
                     }
                     // STOPPED
                     else{
-                        action = "stopping_stopped";
                         waitingAtStation = true;
                         waitTicks = 600;
                         if(broadcasting) {
@@ -264,24 +229,12 @@ public class Train{
                         currentBrake = 0.0;
                         currentLocoBrake = 0.0;
                         // SPEEDING UP TOO SLOW
-                        if(acceleration < targetAcceleration){
-                            if(currentThrottle < 1.0){
-                                currentThrottle += 0.01;
-                                action = "going_reach_acc_throttle_increase";
-                            }
-                            else{
-                                action = "going_reach_acc_throttle_1";
-                            }
+                        if(acceleration < targetAcceleration && currentThrottle < 1.0){
+                            currentThrottle += 0.01;
                         }
                         // SPEEDING UP TOO FAST
-                        else if(acceleration > targetAcceleration){
-                            if(currentThrottle > 0){
-                                currentThrottle -= 0.1;
-                                action = "going_reduce_acc_throttle_decrease";
-                            }
-                            else{
-                                action = "going_reduce_acc_throttle_0";
-                            }
+                        else if(acceleration > targetAcceleration && currentThrottle > 0){
+                            currentThrottle -= 0.1;
                         }
                     }
                     // OVERSPEED
@@ -289,45 +242,24 @@ public class Train{
                         currentThrottle = 0.0;
                         if(slowing){
                             // SLOWING TOO SLOW
-                            if(triggerDistance > targetDistance){
-                                if(currentLocoBrake < 1.0){
-                                    currentLocoBrake += 0.05;
-                                    action = "slowing_reduce_acc_brake_increase";
-                                }
-                                else{
-                                    action = "slowing_reduce_acc_brake_1";
-                                }
+                            if(triggerDistance > targetDistance && currentLocoBrake < 1.0){
+                                currentLocoBrake += 0.05;
                             }
                             // SLOWING TOO FAST
-                            else if(triggerDistance < targetDistance){
-                                if(currentLocoBrake > 0.0){
-                                    currentLocoBrake -= 0.01;
-                                    action = "slowing_reach_acc_brake_decrease";
-                                }
-                                else{
-                                    action = "slowing_reach_acc_brake_0";
-                                }
+                            else if(triggerDistance < targetDistance && currentLocoBrake > 0.0){
+                                currentLocoBrake -= 0.01;
                             }
                         }
                         else{
                             currentLocoBrake += 0.02;
-                            action = "going_overspeed";
                         }
 
-                    }
-                    // AT SPEED
-                    else{
-                        action = "going_at_speed";
                     }
                 }
 
                 trainAPI.setTrainBrake(currentBrake);
                 trainAPI.setIndependentBrake(currentLocoBrake);
                 trainAPI.setThrottle(currentThrottle);
-
-                if(writingData){
-                    writer.println(leadLoco.getTickCount() + "," + acceleration + "," + currentSpeed + "," + targetDistance + "," + action);
-                }
 
                 previousDistance = targetDistance;
                 previousSpeed = currentSpeed;
