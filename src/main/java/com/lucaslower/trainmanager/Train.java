@@ -209,6 +209,7 @@ public class Train{
                     // Make sure we stop completely
                     if (targetDistance < 2.0 || targetDistance > previousDistance) {
                         currentBrake = 1.0;
+                        currentThrottle = 0.0;
                     }
                     // SLOWING
                     if(currentSpeed > 0.0){
