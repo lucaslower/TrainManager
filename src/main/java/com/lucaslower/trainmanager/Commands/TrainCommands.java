@@ -14,7 +14,6 @@ import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.text.StringTextComponent;
-
 import java.util.Map;
 
 public class TrainCommands {

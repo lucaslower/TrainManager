@@ -1,15 +1,13 @@
 package com.lucaslower.trainmanager;
 
-import cam72cam.immersiverailroading.thirdparty.CommonAPI;
-import cam72cam.mod.world.World;
 import com.lucaslower.trainmanager.Events.ModEvents;
 import com.lucaslower.trainmanager.Util.Chat;
 import com.lucaslower.trainmanager.Util.TrainManagerSaveData;
+import cam72cam.immersiverailroading.thirdparty.CommonAPI;
+import cam72cam.mod.world.World;
+import cam72cam.immersiverailroading.entity.Locomotive;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import cam72cam.immersiverailroading.entity.Locomotive;
-
-import java.util.List;
 import java.util.UUID;
 
 public class Train{
@@ -39,20 +37,38 @@ public class Train{
     private int waitTicks = 600;
     private boolean broadcasting = false;
 
-    public Train(UUID leadLocoUUID, String trainID, String routeName, int nextStop, double currentMaxSpeed){
-        this.trainID = trainID;
+    public Train(UUID leadLocoUUID, String trainID, String routeName, boolean enabled, int nextStop, double currentMaxSpeed, boolean stopping, boolean slowing, boolean waitingAtStation, int waitTicks, boolean broadcasting){
         setLeadLoco(leadLocoUUID);
+        this.trainID = trainID;
         this.routeName = routeName;
+        this.enabled = enabled;
         this.targetNum = nextStop;
         this.currentMaxSpeed = currentMaxSpeed;
+        this.stopping = stopping;
+        this.slowing = slowing;
+        this.waitingAtStation = waitingAtStation;
+        this.waitTicks = waitTicks;
+        this.broadcasting = broadcasting;
 
         ModEvents.addTickUpdate(this::doUpdate);
     }
     public Train (UUID leadLocoUUID, String trainID, String routeName){
-        this(leadLocoUUID, trainID, routeName, 0, DEFAULT_SPEED_MPH / 2.237);
+        this(leadLocoUUID, trainID, routeName, false, 0, DEFAULT_SPEED_MPH / 2.237, false, false, false, 600, false);
     }
     public static Train fromNBT(CompoundNBT nbt) {
-        return new Train(nbt.getUUID("leadLocoUUID"), nbt.getString("trainID"), nbt.getString("routeName"), nbt.getInt("nextStop"), nbt.getDouble("currentMaxSpeed"));
+        return new Train(
+            nbt.getUUID("leadLocoUUID"),
+            nbt.getString("trainID"),
+            nbt.getString("routeName"),
+            nbt.getBoolean("enabled"),
+            nbt.getInt("nextStop"),
+            nbt.getDouble("currentMaxSpeed"),
+            nbt.getBoolean("stopping"),
+            nbt.getBoolean("slowing"),
+            nbt.getBoolean("waitingAtStation"),
+            nbt.getInt("waitTicks"),
+            nbt.getBoolean("broadcasting")
+        );
     }
 
     public CompoundNBT toNBT(){
@@ -60,13 +76,20 @@ public class Train{
         nbt.putUUID("leadLocoUUID", leadLoco.getUUID());
         nbt.putString("trainID", trainID);
         nbt.putString("routeName", routeName);
+        nbt.putBoolean("enabled", enabled);
         nbt.putInt("nextStop", targetNum);
         nbt.putDouble("currentMaxSpeed", currentMaxSpeed);
+        nbt.putBoolean("stopping", stopping);
+        nbt.putBoolean("slowing", slowing);
+        nbt.putBoolean("waitingAtStation", waitingAtStation);
+        nbt.putInt("waitTicks", waitTicks);
+        nbt.putBoolean("broadcasting", broadcasting);
         return nbt;
     }
 
     public void setBroadcast(boolean on){
         broadcasting = on;
+        TrainManagerSaveData.markDirty();
     }
 
     public Locomotive getLeadLoco(){
@@ -74,13 +97,9 @@ public class Train{
     }
 
     public void setLeadLoco(UUID leadLocoUUID){
-        List<Locomotive> locos = World.get(ServerLifecycleHooks.getCurrentServer().overworld()).getEntities(Locomotive.class);
-        for(Locomotive loco : locos){
-            if(loco.getUUID().equals(leadLocoUUID)){
-                this.leadLoco = loco;
-                this.trainAPI = new CommonAPI(loco);
-            }
-        }
+        Locomotive loco = World.get(ServerLifecycleHooks.getCurrentServer().overworld()).getEntity(leadLocoUUID, Locomotive.class);
+        this.leadLoco = loco;
+        this.trainAPI = new CommonAPI(loco);
     }
 
     public String getTrainID(){
@@ -105,6 +124,7 @@ public class Train{
         this.enabled = true;
         trainAPI.setIgnition(true);
         trainAPI.setReverser(1.0);
+        TrainManagerSaveData.markDirty();
     }
     public void disable(){
         this.enabled = false;
@@ -112,6 +132,7 @@ public class Train{
         trainAPI.setTrainBrake(1.0);
         trainAPI.setReverser(0.0);
         trainAPI.setIgnition(false);
+        TrainManagerSaveData.markDirty();
     }
 
     public void doUpdate(){

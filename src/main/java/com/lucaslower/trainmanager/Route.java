@@ -2,13 +2,13 @@ package com.lucaslower.trainmanager;
 
 import com.lucaslower.trainmanager.Util.TrainManagerSaveData;
 import net.minecraft.nbt.CompoundNBT;
-
+import net.minecraft.nbt.ListNBT;
+import net.minecraftforge.common.util.Constants;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class Route {
-    private final LinkedList<Target> targets = new LinkedList<>();
+    private LinkedList<Target> targets = new LinkedList<>();
     private final String routeName;
 
     public Route(String name){
@@ -17,24 +17,15 @@ public class Route {
 
     public static Route fromNBT(CompoundNBT nbt){
         Route r = new Route(nbt.getString("routeName"));
-        CompoundNBT savetargets = nbt.getCompound("targets");
-        for(int i=0;savetargets.contains("target"+i);i++){
-            Target target = Target.fromNBT(savetargets.getCompound("target" + i));
-            r.targets.add(target);
-        }
+        r.targets = nbt.getList("targets", Constants.NBT.TAG_COMPOUND).stream().map((tag) -> Target.fromNBT((CompoundNBT) tag)).collect(Collectors.toCollection(LinkedList::new));
         return r;
     }
 
     public CompoundNBT toNBT(){
         CompoundNBT nbt = new CompoundNBT();
         nbt.putString("routeName", this.routeName);
-
-        CompoundNBT savetargets = new CompoundNBT();
-        int i = 0;
-        for (Target target : getTargets()) {
-            savetargets.put("target" + i++, target.toNBT());
-        }
-        nbt.put("targets", savetargets);
+        ListNBT targetList = targets.stream().map(Target::toNBT).collect(Collectors.toCollection(ListNBT::new));
+        nbt.put("targets", targetList);
         return nbt;
     }
 

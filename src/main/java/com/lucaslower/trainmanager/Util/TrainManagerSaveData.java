@@ -8,7 +8,6 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraft.world.storage.WorldSavedData;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-
 import java.util.*;
 
 public class TrainManagerSaveData extends WorldSavedData {

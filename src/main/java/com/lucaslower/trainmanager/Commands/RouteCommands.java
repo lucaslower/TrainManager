@@ -6,14 +6,12 @@ import com.lucaslower.trainmanager.Target.TargetType;
 import com.lucaslower.trainmanager.Util.TrainManagerSaveData;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.util.text.StringTextComponent;
-
 import java.util.LinkedList;
 import java.util.Map;
 
