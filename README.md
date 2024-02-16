@@ -4,6 +4,12 @@ TrainManager is a Minecraft Forge 1.16.5 mod that works with Immersive Railroadi
 
 Currently everything is managed through commands, but I'll probably be adding a GUI at some point (especially to allow re-ordering of stops in the case they are added out of sequence).
 
+## Download
+
+[You can download the jar here](https://github.com/lucaslower/TrainManager/blob/main/build/libs/trainmanager-1.0.0.jar) (it's in the build/libs directory)
+
+I will put it on CurseForge once I've got it a bit more updated.
+
 ## Command Usage
 
 The base command is /trainmanager. This sucks to type, so let me know if you can think of anything better. I was going to do /tm but that's a built-in command, womp womp.
