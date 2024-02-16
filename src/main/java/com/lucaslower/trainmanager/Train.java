@@ -6,13 +6,9 @@ import com.lucaslower.trainmanager.Events.ModEvents;
 import com.lucaslower.trainmanager.Util.Chat;
 import com.lucaslower.trainmanager.Util.TrainManagerSaveData;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import cam72cam.immersiverailroading.entity.Locomotive;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +17,7 @@ public class Train{
     private static final double MAX_ACCELERATION = 0.5;
     private static final double STOPPING_DECELERATION = -1;
     private static final double SLOWING_DECELERATION = -0.5;
-    private static final double MAX_SPEED_MPH = 55.0;
+    private static final double DEFAULT_SPEED_MPH = 55.0;
 
     private Locomotive leadLoco;
     private CommonAPI trainAPI;
@@ -29,7 +25,7 @@ public class Train{
     private String routeName;
     private boolean enabled = false;
     private int targetNum = 0;
-    private double currentMaxSpeed = MAX_SPEED_MPH / 2.237;
+    private double currentMaxSpeed;
     private double previousSpeed = 0.0;
     private double previousDistance = 0.0;
     private boolean stopping = false;
@@ -43,16 +39,20 @@ public class Train{
     private int waitTicks = 600;
     private boolean broadcasting = false;
 
-    public Train(UUID leadLocoUUID, String trainID, String routeName, int nextStop){
+    public Train(UUID leadLocoUUID, String trainID, String routeName, int nextStop, double currentMaxSpeed){
         this.trainID = trainID;
         setLeadLoco(leadLocoUUID);
         this.routeName = routeName;
         this.targetNum = nextStop;
+        this.currentMaxSpeed = currentMaxSpeed;
 
         ModEvents.addTickUpdate(this::doUpdate);
     }
+    public Train (UUID leadLocoUUID, String trainID, String routeName){
+        this(leadLocoUUID, trainID, routeName, 0, DEFAULT_SPEED_MPH / 2.237);
+    }
     public static Train fromNBT(CompoundNBT nbt) {
-        return new Train(nbt.getUUID("leadLocoUUID"), nbt.getString("trainID"), nbt.getString("routeName"), nbt.getInt("nextStop"));
+        return new Train(nbt.getUUID("leadLocoUUID"), nbt.getString("trainID"), nbt.getString("routeName"), nbt.getInt("nextStop"), nbt.getDouble("currentMaxSpeed"));
     }
 
     public CompoundNBT toNBT(){
@@ -61,6 +61,7 @@ public class Train{
         nbt.putString("trainID", trainID);
         nbt.putString("routeName", routeName);
         nbt.putInt("nextStop", targetNum);
+        nbt.putDouble("currentMaxSpeed", currentMaxSpeed);
         return nbt;
     }
 
@@ -145,7 +146,7 @@ public class Train{
                 double acceleration = currentSpeed - previousSpeed;
 
                 // Get trigger condition
-                double speedToReach = currentTarget.getTargetSpeed() / 2.237;
+                double speedToReach = currentTarget.getTargetSpeedMPS();
                 double targetDeceleration = currentTarget.getTargetType() == Target.TargetType.SPEED_CHANGE ? SLOWING_DECELERATION : STOPPING_DECELERATION;
                 double triggerDistance = ((speedToReach * speedToReach) - (currentSpeed * currentSpeed)) / (2 * targetDeceleration);
                 double targetDistance = Math.sqrt(Math.pow(targetX - currentX, 2) + Math.pow(targetZ - currentZ, 2));

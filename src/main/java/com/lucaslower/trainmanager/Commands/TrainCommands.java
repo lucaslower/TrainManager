@@ -87,7 +87,7 @@ public class TrainCommands {
 
         if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
             if(TrainManagerSaveData.getRoutes(cmd.getSource().getLevel()).containsKey(routeName)){
-                Train t = new Train(leadLoco.getUUID(), trainID, routeName, 0);
+                Train t = new Train(leadLoco.getUUID(), trainID, routeName);
                 TrainManagerSaveData.createTrain(t, cmd.getSource().getLevel());
                 cmd.getSource().sendSuccess(new StringTextComponent("Train '" + t.getTrainID() + "' created, lead loco set to " + t.getLeadLoco().getUUID().toString()), true);
                 return 1;

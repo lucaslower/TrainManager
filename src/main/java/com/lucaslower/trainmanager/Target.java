@@ -64,6 +64,7 @@ public class Target {
     public double getTargetZ() { return this.targetZ; }
 
     public double getTargetSpeed(){ return this.speed; }
+    public double getTargetSpeedMPS(){ return this.speed / 2.237; }
 
     public enum TargetType{
         STATION_STOP, SPEED_CHANGE, SWITCH;
