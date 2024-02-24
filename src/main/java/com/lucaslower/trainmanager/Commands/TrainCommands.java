@@ -14,6 +14,7 @@ import net.minecraft.command.Commands;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.text.StringTextComponent;
+
 import java.util.Map;
 
 public class TrainCommands {
@@ -79,48 +80,41 @@ public class TrainCommands {
         return 1;
     }
 
-    private static int createTrain(CommandContext<CommandSource> cmd) throws CommandSyntaxException {
-        final Entity leadLoco = EntityArgument.getEntity(cmd, "leadLoco");
-        final String trainID = StringArgumentType.getString(cmd, "trainID");
-        final String routeName = StringArgumentType.getString(cmd, "routeName");
-
-        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
-            if(TrainManagerSaveData.getRoutes(cmd.getSource().getLevel()).containsKey(routeName)){
-                Train t = new Train(leadLoco.getUUID(), trainID, routeName);
-                TrainManagerSaveData.createTrain(t, cmd.getSource().getLevel());
-                cmd.getSource().sendSuccess(new StringTextComponent("Train '" + t.getTrainID() + "' created, lead loco set to " + t.getLeadLoco().getUUID().toString()), true);
-                return 1;
+    private static int createTrain(CommandContext<CommandSource> cmd) {
+        return Validation.ifRouteExists(cmd, (r) -> {
+            final Entity leadLoco;
+            try {
+                leadLoco = EntityArgument.getEntity(cmd, "leadLoco");
+            } catch (CommandSyntaxException e) {
+                cmd.getSource().sendFailure(new StringTextComponent("Error: invalid entity given for lead locomotive."));
+                return 0;
             }
-            else{
-                cmd.getSource().sendFailure(new StringTextComponent("Error: route '" + routeName + "' does not exist."));
-            }
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
-        }
-        return 0;
+            final String trainID = StringArgumentType.getString(cmd, "trainID");
+            Train t = new Train(leadLoco.getUUID(), trainID, r.getRouteName());
+            TrainManagerSaveData.saveTrain(t, cmd.getSource().getLevel());
+            cmd.getSource().sendSuccess(new StringTextComponent("Train '" + t.getTrainID() + "' created, lead loco set to " + t.getLeadLoco().getUUID().toString()), true);
+            return 1;
+        });
     }
 
-    private static int setLeadLoco(CommandContext<CommandSource> cmd) throws CommandSyntaxException {
-        String trainID = StringArgumentType.getString(cmd, "trainID");
-        Entity leadLoco = EntityArgument.getEntity(cmd, "leadLoco");
-        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
-            Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
+    private static int setLeadLoco(CommandContext<CommandSource> cmd) {
+        return Validation.ifTrainExists(cmd, (t) -> {
+            final Entity leadLoco;
+            try {
+                leadLoco = EntityArgument.getEntity(cmd, "leadLoco");
+            } catch (CommandSyntaxException e) {
+                cmd.getSource().sendFailure(new StringTextComponent("Error: invalid entity given for lead locomotive."));
+                return 0;
+            }
             t.setLeadLoco(leadLoco.getUUID());
             cmd.getSource().sendSuccess(new StringTextComponent("Lead loco set to " + t.getLeadLoco().getUUID().toString() + " for train " + t.getTrainID()), true);
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
-        }
-        return 0;
+            return 1;
+        });
     }
 
     private static int setRouteName(CommandContext<CommandSource> cmd) {
-        String trainID = StringArgumentType.getString(cmd, "trainID");
-        String routeName = StringArgumentType.getString(cmd, "routeName");
-
-        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
-            Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
+        return Validation.ifTrainExists(cmd, (t) -> {
+            String routeName = StringArgumentType.getString(cmd, "routeName");
             if(TrainManagerSaveData.getRoutes(cmd.getSource().getLevel()).containsKey(routeName)){
                 t.setRouteName(routeName);
                 cmd.getSource().sendSuccess(new StringTextComponent("Route name set to '" + routeName + "' for train "+ t.getTrainID()), true);
@@ -129,19 +123,13 @@ public class TrainCommands {
             else{
                 cmd.getSource().sendFailure(new StringTextComponent("Error: route '" + routeName + "' does not exist."));
             }
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
-        }
-        return 0;
+            return 0;
+        });
     }
 
     private static int setNextTarget(CommandContext<CommandSource> cmd) {
-        String trainID = StringArgumentType.getString(cmd, "trainID");
-        int num = IntegerArgumentType.getInteger(cmd, "nextTargetNum");
-
-        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
-            Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
+        return Validation.ifTrainExists(cmd, (t) -> {
+            int num = IntegerArgumentType.getInteger(cmd, "nextTargetNum");
             int trSize = t.getRoute().getTargets().size();
             if(num >= 0 && num < trSize){
                 t.setNextTarget(num);
@@ -151,54 +139,34 @@ public class TrainCommands {
             else{
                 cmd.getSource().sendFailure(new StringTextComponent("Error: target number " + num + " out of bounds. Must be between 0 and " + (trSize - 1) + ", inclusive."));
             }
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
-        }
-        return 0;
+            return 0;
+        });
     }
 
     private static int disableTrain(CommandContext<CommandSource> cmd) {
-        String trainID = StringArgumentType.getString(cmd, "trainID");
-        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
-            Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
+        return Validation.ifTrainExists(cmd, (t) -> {
             t.disable();
             cmd.getSource().sendSuccess(new StringTextComponent("Train "+ t.getTrainID() + " disabled."), true);
             return 1;
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
-        }
-        return 0;
+        });
     }
 
     private static int enableTrain(CommandContext<CommandSource> cmd) {
-        String trainID = StringArgumentType.getString(cmd, "trainID");
-        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
-            Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
+        return Validation.ifTrainExists(cmd, (t) -> {
             t.enable();
             cmd.getSource().sendSuccess(new StringTextComponent("Train "+ t.getTrainID() + " enabled."), true);
             return 1;
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
-        }
-        return 0;
+        });
     }
 
     private static int updateBroadcastState(CommandContext<CommandSource> cmd) {
-        String trainID = StringArgumentType.getString(cmd, "trainID");
-        boolean on = BoolArgumentType.getBool(cmd, "truefalse");
-
-        if(TrainManagerSaveData.getTrains(cmd.getSource().getLevel()).containsKey(trainID)){
-            Train t = TrainManagerSaveData.getTrain(cmd.getSource().getLevel(), trainID);
+        return Validation.ifTrainExists(cmd, (t) -> {
+            boolean on = BoolArgumentType.getBool(cmd, "truefalse");
             t.setBroadcast(on);
             cmd.getSource().sendSuccess(new StringTextComponent("Train "+ t.getTrainID() + (on ? " broadcasting status updates." : " stopped broadcasting updates.")), true);
             return 1;
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: train '" + trainID + "' does not exist."));
-        }
-        return 0;
+        });
     }
+
+
 }

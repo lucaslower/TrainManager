@@ -1,18 +1,26 @@
 package com.lucaslower.trainmanager.Events;
 
+import com.lucaslower.trainmanager.Train;
 import com.lucaslower.trainmanager.TrainManagerMain;
 import com.lucaslower.trainmanager.Commands.TrainCommands;
 import com.lucaslower.trainmanager.Commands.RouteCommands;
 import com.lucaslower.trainmanager.Util.TrainManagerSaveData;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.MinecraftForgeClient;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 
@@ -35,7 +43,7 @@ public class ModEvents {
     }
 
     @SubscribeEvent
-    public static void onCommandsRegister(RegisterCommandsEvent event){
+    public static void onRegisterCommands(RegisterCommandsEvent event){
         TrainCommands.register(event.getDispatcher());
         RouteCommands.register(event.getDispatcher());
     }
@@ -48,13 +56,27 @@ public class ModEvents {
     }
 
     @SubscribeEvent
-    public static void onServerStopping(FMLServerStoppingEvent event){
+    public static void onFMLServerStopping(FMLServerStoppingEvent event){
         writers.forEach(PrintWriter::close);
         TrainManagerSaveData.markDirty();
     }
 
     @SubscribeEvent
-    public static void onServerStarting(FMLServerStartedEvent event){
+    public static void onFMLServerStarted(FMLServerStartedEvent event){
         event.getServer().overworld().getDataStorage().computeIfAbsent(TrainManagerSaveData::new, TrainManagerSaveData.NAME);
+    }
+
+    @SubscribeEvent
+    public static void onRenderGameOverlay(RenderGameOverlayEvent.Post event){
+        if(event.getType() == RenderGameOverlayEvent.ElementType.TEXT){
+            Collection<Train> trains = TrainManagerSaveData.getTrains(ServerLifecycleHooks.getCurrentServer().overworld()).values();
+            int curY = 2;
+            FontRenderer fr = Minecraft.getInstance().font;
+            for(Train train : trains){
+                fr.draw(event.getMatrixStack(), train.toString(), 2, curY, 0xFFFFFFFF);
+                curY += fr.lineHeight + 2;
+            }
+
+        }
     }
 }

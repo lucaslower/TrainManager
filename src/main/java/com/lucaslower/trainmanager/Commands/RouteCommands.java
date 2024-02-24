@@ -45,46 +45,6 @@ public class RouteCommands {
         );
     }
 
-    private static int createRouteStop(CommandContext<CommandSource> cmd) {
-        String routeName = StringArgumentType.getString(cmd, "routeName");
-        String stationName = StringArgumentType.getString(cmd, "stationName");
-
-        if(TrainManagerSaveData.getRoutes(cmd.getSource().getLevel()).containsKey(routeName)){
-            Target newTarget = Target.newStation(stationName, cmd.getSource().getPosition().x, cmd.getSource().getPosition().z);
-            TrainManagerSaveData.createRouteTarget(newTarget, routeName, cmd.getSource().getLevel());
-            cmd.getSource().sendSuccess(new StringTextComponent("Stop '" + newTarget.getTargetName() + "' created at present location for route " + routeName), true);
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: route '" + routeName + "' does not exist."));
-        }
-        return 1;
-    }
-
-    private static int createRouteSpeedChange(CommandContext<CommandSource> cmd) {
-        String routeName = StringArgumentType.getString(cmd, "routeName");
-        double speed = DoubleArgumentType.getDouble(cmd, "speed");
-
-        if(TrainManagerSaveData.getRoutes(cmd.getSource().getLevel()).containsKey(routeName)){
-            Target newTarget = Target.newSpeedChange(speed, cmd.getSource().getPosition().x, cmd.getSource().getPosition().z);
-            TrainManagerSaveData.createRouteTarget(newTarget, routeName, cmd.getSource().getLevel());
-            cmd.getSource().sendSuccess(new StringTextComponent("Speed Limit of " + speed + "mph created at present location for route " + routeName), true);
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: route '" + routeName + "' does not exist."));
-        }
-
-
-        return 1;
-    }
-
-    private static int createRoute(CommandContext<CommandSource> cmd) {
-        String routeName = StringArgumentType.getString(cmd, "routeName");
-        Route r = new Route(routeName);
-        TrainManagerSaveData.createRoute(r, cmd.getSource().getLevel());
-        cmd.getSource().sendSuccess(new StringTextComponent("Route '" + r.getRouteName() + "' created, please add stops in order from route start to end"), true);
-        return 1;
-    }
-
     private static int listRoutes(CommandContext<CommandSource> cmd) {
         CommandSource src = cmd.getSource();
         Map<String, Route> routes = TrainManagerSaveData.getRoutes(src.getLevel());
@@ -102,18 +62,41 @@ public class RouteCommands {
     }
 
     private static int listRouteTargets(CommandContext<CommandSource> cmd){
-        String routeName = StringArgumentType.getString(cmd, "routeName");
-
-        if(TrainManagerSaveData.getRoutes(cmd.getSource().getLevel()).containsKey(routeName)){
-            Route r = TrainManagerSaveData.getRoute(cmd.getSource().getLevel(), routeName);
+        return Validation.ifRouteExists(cmd, (r) -> {
+            cmd.getSource().sendSuccess(new StringTextComponent("Listing Targets for Route: " + r.getRouteName()), true);
             int i = 0;
             for(Target tgt : r.getTargets()){
                 cmd.getSource().sendSuccess(new StringTextComponent("Target " + (i++) + ": (x " + tgt.getTargetX() + ", z " + tgt.getTargetZ() + ") " + tgt.getTargetType().name() + " " + (tgt.getTargetType() == TargetType.SPEED_CHANGE ? tgt.getTargetSpeed() : tgt.getTargetName())), true);
             }
-        }
-        else{
-            cmd.getSource().sendFailure(new StringTextComponent("Error: route '" + routeName + "' does not exist."));
-        }
+            return 1;
+        });
+    }
+
+    private static int createRoute(CommandContext<CommandSource> cmd) {
+        String routeName = StringArgumentType.getString(cmd, "routeName");
+        Route r = new Route(routeName);
+        TrainManagerSaveData.saveRoute(r, cmd.getSource().getLevel());
+        cmd.getSource().sendSuccess(new StringTextComponent("Route '" + r.getRouteName() + "' created, please add stops in order from route start to end"), true);
         return 1;
+    }
+
+    private static int createRouteStop(CommandContext<CommandSource> cmd) {
+        return Validation.ifRouteExists(cmd, (r) -> {
+            String stationName = StringArgumentType.getString(cmd, "stationName");
+            Target newTarget = Target.newStation(stationName, cmd.getSource().getPosition().x, cmd.getSource().getPosition().z);
+            r.addTarget(newTarget);
+            cmd.getSource().sendSuccess(new StringTextComponent("Stop '" + newTarget.getTargetName() + "' created at present location for route " + r.getRouteName()), true);
+            return 1;
+        });
+    }
+
+    private static int createRouteSpeedChange(CommandContext<CommandSource> cmd) {
+        return Validation.ifRouteExists(cmd, (r) -> {
+            double speed = DoubleArgumentType.getDouble(cmd, "speed");
+            Target newTarget = Target.newSpeedChange(speed, cmd.getSource().getPosition().x, cmd.getSource().getPosition().z);
+            r.addTarget(newTarget);
+            cmd.getSource().sendSuccess(new StringTextComponent("Speed Limit of " + speed + "mph created at present location for route " + r.getRouteName()), true);
+            return 1;
+        });
     }
 }

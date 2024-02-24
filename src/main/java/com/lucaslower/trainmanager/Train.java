@@ -32,6 +32,8 @@ public class Train{
     private double currentThrottle = 0.0;
     private double currentBrake = 0.0;
     private double currentLocoBrake = 0.0;
+    private double currentTargetAccel;
+    private double currentAccel;
 
     private boolean waitingAtStation = false;
     private int waitTicks = 600;
@@ -85,6 +87,12 @@ public class Train{
         nbt.putInt("waitTicks", waitTicks);
         nbt.putBoolean("broadcasting", broadcasting);
         return nbt;
+    }
+
+    @Override
+    public String toString(){
+        // TrainID - NextTarget, TargetAccel, Accel, MaxSpeed
+        return String.format("%s - NT: %d, TA: %.6f, A: %.6f, TS: %.2f", getTrainID(), targetNum, currentTargetAccel, currentAccel, currentMaxSpeed);
     }
 
     public void setBroadcast(boolean on){
@@ -165,6 +173,7 @@ public class Train{
                 double currentZ = leadLoco.getPosition().z;
                 double currentSpeed = leadLoco.getCurrentSpeed().metersPerSecond();
                 double acceleration = currentSpeed - previousSpeed;
+                currentAccel = acceleration;
 
                 // Get trigger condition
                 double speedToReach = currentTarget.getTargetSpeedMPS();
@@ -236,6 +245,7 @@ public class Train{
                     double targetSpeed = currentMaxSpeed;
                     double speedDiff = targetSpeed - currentSpeed;
                     double targetAcceleration = (speedDiff/targetSpeed) * MAX_ACCELERATION;
+                    currentTargetAccel = targetAcceleration;
 
                     // UNDERSPEED
                     if(speedDiff > 0){

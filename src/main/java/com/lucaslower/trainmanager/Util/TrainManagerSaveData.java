@@ -27,7 +27,6 @@ public class TrainManagerSaveData extends WorldSavedData {
 
     @Override
     public void load(CompoundNBT nbt) {
-
         CompoundNBT routes = nbt.getCompound("routes");
         for(int i=0;routes.contains("route"+i);i++){
             Route r = Route.fromNBT(routes.getCompound("route" + i));
@@ -65,38 +64,27 @@ public class TrainManagerSaveData extends WorldSavedData {
     }
 
     // TRAINS
-
-    public static void createTrain(Train t, ServerWorld world){
+    public static void saveTrain(Train t, ServerWorld world){
         TrainManagerSaveData data = world.getDataStorage().computeIfAbsent(TrainManagerSaveData::new, TrainManagerSaveData.NAME);
         data.TRAINS_DATA.put(t.getTrainID(), t);
         data.setDirty();
     }
-
     public static Map<String, Train> getTrains(ServerWorld world){
         return world.getDataStorage().computeIfAbsent(TrainManagerSaveData::new, TrainManagerSaveData.NAME).TRAINS_DATA;
     }
-
     public static Train getTrain(ServerWorld world, String trainID){
         return getTrains(world).get(trainID);
     }
 
     // ROUTES
-
-    public static void createRoute(Route r, ServerWorld world){
+    public static void saveRoute(Route r, ServerWorld world){
         TrainManagerSaveData data = world.getDataStorage().computeIfAbsent(TrainManagerSaveData::new, TrainManagerSaveData.NAME);
         data.ROUTES_DATA.put(r.getRouteName(), r);
         data.setDirty();
     }
-
-    public static void createRouteTarget(Target s, String routeName, ServerWorld world){
-        getRoute(world, routeName).addTarget(s);
-        markDirty();
-    }
-
     public static Map<String, Route> getRoutes(ServerWorld world){
         return world.getDataStorage().computeIfAbsent(TrainManagerSaveData::new, TrainManagerSaveData.NAME).ROUTES_DATA;
     }
-
     public static Route getRoute(ServerWorld world, String routeName){
         return getRoutes(world).get(routeName);
     }
