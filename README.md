@@ -56,9 +56,6 @@ The base command is /trainmanager. This sucks to type, so let me know if you can
 - */trainmanager trains \<trainName\> setNextTarget <nextTargetNum>*
 
   This sets the next target for the train to the given number. This number is the same as the one in the NBT compound as described above in the note on stop/speed change ordering. This is useful when you create a train and it's already somewhere within the route target sequence.
-- */trainmanager trains \<trainName\> saveData \<true/false\>*
-
-  Sets whether or not the train saves some stats to a CSV file. This includes acceleration, the current action it is doing, etc. I got to make some fun graphs with this, so it was worth it.
 - */trainmanager trains \<trainName\> broadcastUpdates \<true/false\>*
 
   Sets whether or not the train sends updates in chat, such as what it is currently doing speed limit wise, station stops, etc.
